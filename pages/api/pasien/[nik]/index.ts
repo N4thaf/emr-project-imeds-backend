@@ -1,31 +1,73 @@
-import { NextResponse } from 'next/server';
-import { getPatientByNik, addPatientRecord } from '@/lib/patient';
+import clientPromise from "@/lib/db";
+import { patient } from "@/types";
+import { NextApiRequest, NextApiResponse } from "next";
 
-export async function handler(req: Request, { params }: { params: { nik: string } }) {
-  const { nik } = params;
+export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
+  const { nik } = req.query;
+  const client = await clientPromise;
+  const db = client.db("namanyaapa");
+  const collection = db.collection("pasien");
 
-  // Handle GET request to fetch patient by NIK
-  if (req.method === 'GET') {
-    try {
-      const patient = await getPatientByNik(nik);
+  try {
+    if (req.method === "GET") {
+      const patient = await collection.findOne({ "personalInfo.nik": nik });
+      if (!patient) return res.status(404).json({ message: "Patient not found" });
+
+      return res.status(200).json(patient);
+    }
+
+    if (req.method === "POST") {
+      const {
+        diagnosis = [],
+        vitals = [],
+        labResults = [],
+        treatments = [],
+        consultationNotes = [],
+        disposition = []
+      } = req.body as patient;
+
+      // Cek dulu apakah pasien ada
+      const patient = await collection.findOne({ "personalInfo.nik": nik });
       if (!patient) {
-        return NextResponse.json({ message: 'Patient not found' }, { status: 404 });
+        return res.status(404).json({ message: "Patient not found" });
       }
-      return NextResponse.json(patient, { status: 200 });
-    } catch (error: any) {
-      return NextResponse.json({ message: 'Error fetching patient data', error: error?.message }, { status: 500 });
-    }
-  }
 
-  if (req.method === 'POST') {
-    try {
-      const { section, data } = await req.json();
-      const updatedPatient = await addPatientRecord(nik, section, data);
-      return NextResponse.json(updatedPatient, { status: 200 });
-    } catch (error: any) {
-      return NextResponse.json({ message: 'Error adding record', error: error?.message }, { status: 400 });
+      // Build dynamic update object
+      const updateObj: any = {};
+      if (diagnosis.length) {
+        updateObj.diagnosis = { $each: diagnosis };
+      }
+      if (vitals.length) {
+        updateObj.vitals = { $each: vitals };
+      }
+      if (labResults.length) {
+        updateObj.labResults = { $each: labResults };
+      }
+      if (treatments.length) {
+        updateObj.treatments = { $each: treatments };
+      }
+      if (consultationNotes.length) {
+        updateObj.consultationNotes = { $each: consultationNotes };
+      }
+      if (disposition.length) {
+        updateObj.disposition = { $each: disposition };
+      }
+
+      if (!Object.keys(updateObj).length) {
+        return res.status(400).json({ message: "No valid records to push" });
+      }
+
+      const result = await collection.updateOne(
+        { "personalInfo.nik": nik },
+        { $push: updateObj }
+      );
+
+      return res.status(200).json({ message: "Records added", result });
     }
+
+    return res.status(405).json({ message: "Method not allowed" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Internal server error" });
   }
-  
-  return NextResponse.json({ message: 'Method not allowed' }, { status: 405 });
 }
