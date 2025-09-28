@@ -1,6 +1,4 @@
-import { GetStaticProps } from 'next';
-
-export async function Home() {
+export default async function Home() {
   return null;
 }
 
