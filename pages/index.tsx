@@ -1,11 +1,14 @@
-// app/api/index/route.ts
-import { NextResponse } from 'next/server';
+import { GetStaticProps } from 'next';
 
-export async function GET() {
-  const responseData = {
-    message: 'Welcome to the Patient API',
-    status: 'OK',
+export async function Home() {
+  return null;
+}
+
+export const getStaticProps: GetStaticProps = async () => {
+  return {
+    props: {
+      message: 'Welcome to the Patient API',
+      status: 'OK',
+    },
   };
-
-  return NextResponse.json(responseData);
 }
