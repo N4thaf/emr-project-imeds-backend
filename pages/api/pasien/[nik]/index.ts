@@ -34,31 +34,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         disposition = []
       } = req.body as patient;
 
-      // Cek dulu apakah pasien ada
       const patient = await collection.findOne({ "personalInfo.nik": nik });
       if (!patient) {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      // Build dynamic update object
       const updateObj: any = {};
       if (diagnosis.length) {
-        updateObj.diagnosis = { $each: diagnosis };
+        updateObj.diagnosis = { $each: [diagnosis] };
       }
       if (vitals.length) {
-        updateObj.vitals = { $each: vitals };
+        updateObj.vitals = { $each: [vitals] };
       }
       if (labResults.length) {
-        updateObj.labResults = { $each: labResults };
+        updateObj.labResults = { $each: [labResults] };
       }
       if (treatments.length) {
-        updateObj.treatments = { $each: treatments };
+        updateObj.treatments = { $each: [treatments] };
       }
       if (consultationNotes.length) {
-        updateObj.consultationNotes = { $each: consultationNotes };
+        updateObj.consultationNotes = { $each: [consultationNotes] };
       }
       if (disposition.length) {
-        updateObj.disposition = { $each: disposition };
+        updateObj.disposition = { $each: [disposition] };
       }
 
       if (!Object.keys(updateObj).length) {
