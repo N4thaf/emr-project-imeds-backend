@@ -26,12 +26,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     if (req.method === "POST") {
       const {
-        diagnosis = [],
-        vitals = [],
-        labResults = [],
-        treatments = [],
-        consultationNotes = [],
-        disposition = []
+        diagnosis,
+        vitals,
+        labResults,
+        treatments,
+        consultationNotes,
+        disposition
       } = req.body as patient;
 
       const patient = await collection.findOne({ "personalInfo.nik": nik });
@@ -40,24 +40,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       const updateObj: any = {};
-      if (diagnosis.length) {
-        updateObj.diagnosis = { $each: [diagnosis] };
-      }
-      if (vitals.length) {
-        updateObj.vitals = { $each: [vitals] };
-      }
-      if (labResults.length) {
-        updateObj.labResults = { $each: [labResults] };
-      }
-      if (treatments.length) {
-        updateObj.treatments = { $each: [treatments] };
-      }
-      if (consultationNotes.length) {
-        updateObj.consultationNotes = { $each: [consultationNotes] };
-      }
-      if (disposition.length) {
-        updateObj.disposition = { $each: [disposition] };
-      }
+
+      if (diagnosis) updateObj.diagnosis = { $each: [diagnosis] };
+      if (vitals) updateObj.vitals = { $each: [vitals] };
+      if (labResults) updateObj.labResults = { $each: [labResults] };
+      if (treatments) updateObj.treatments = { $each: [treatments] };
+      if (consultationNotes) updateObj.consultationNotes = { $each: [consultationNotes] };
+      if (disposition) updateObj.disposition = { $each: [disposition] };
 
       if (!Object.keys(updateObj).length) {
         return res.status(400).json({ message: "No valid records to push" });
